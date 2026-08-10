@@ -1,0 +1,4 @@
+// Hier sind die Informationen über das Ausmaß/Form der Simulation gespeichert
+
+sim_length = 100
+depth = 1

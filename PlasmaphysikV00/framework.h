@@ -13,3 +13,12 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+
+// Weitere Includes
+#include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
+
+// Wichtige Konstanten
+constexpr UINT WM_SIMULATION_UPDATE = WM_APP + 1;

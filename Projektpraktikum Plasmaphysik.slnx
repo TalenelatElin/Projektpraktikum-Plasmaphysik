@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="PlasmaphysikV00/PlasmaphysikV00.vcxproj" />
+  <Project Path="PlasmaphysikV00/PlasmaphysikV00.vcxproj" Id="750dee4b-879a-4342-9ffa-c3832ca191fe" />
 </Solution>
