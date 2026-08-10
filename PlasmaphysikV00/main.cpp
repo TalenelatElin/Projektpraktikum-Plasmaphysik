@@ -1,21 +1,28 @@
-// PlasmaphysikV00.cpp : Definiert den Einstiegspunkt für die Anwendung.
+// main.cpp : Definiert den Einstiegspunkt für die Anwendung.
 //
 
 #include "framework.h"
-#include "PlasmaphysikV00.h"
+#include "main.h"
+#include "StateToWindow.h"
+#include "Simulation.h"
+
 
 #define MAX_LOADSTRING 100
 
 // Globale Variablen:
-HINSTANCE hInst;                                // Aktuelle Instanz
+HINSTANCE hInst;                                // Aktuelle Instanz (erster Thread)
 WCHAR szTitle[MAX_LOADSTRING];                  // Titelleistentext
 WCHAR szWindowClass[MAX_LOADSTRING];            // Der Klassenname des Hauptfensters.
+Simulation simulation;
+std::jthread simulationThread;                  // Erstellen des Simulation-objekts, das im zweiten Thread rechnet
+
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -26,7 +33,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Hier Code einfügen.
+    //simulation.Initialize();
 
+
+    //
     // Globale Zeichenfolgen initialisieren
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_PLASMAPHYSIKV00, szWindowClass, MAX_LOADSTRING);
@@ -108,6 +118,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
+   simulation.giveWindow(hWnd);
+
    return TRUE;
 }
 
@@ -131,22 +143,62 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // Menüauswahl analysieren:
             switch (wmId)
             {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            //  Menüpunkt Simulation:
+            case ID_SIMULATION_STARTEN:
+                simulationThread = std::jthread(
+                    [&](std::stop_token stopToken)
+                    {
+                        simulation.Start();
+                    });
+                break;
+            case ID_SIMULATION_ANHALTEN:
+                simulation.Stop();
+                simulationThread.request_stop();
+                break;
+            case ID_SIMULATION_UPDATE:
+                PostMessage(
+                    hWnd,
+                    WM_SIMULATION_UPDATE,
+                    0,
+                    0
+                );
+                break; 
+            case ID_SIMULATION_RESET:
+                simulation.Reset();
+                break;
+            case ID_SIMULATION_EINSTELLUNGEN:
+                simulationThread.request_stop();
+                break;
+
+
+            // Default Menüpunkte:
+            case ID_DATEI_DOWNLOADSIMULATION:
+                simulation.download("Entwicklung_simuliert");
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
+                break;
+            case IDM_ABOUT:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
         }
         break;
+    case WM_SIMULATION_UPDATE:
+        {
+            InvalidateRect(hWnd, nullptr, FALSE);
+            break;
+        }
+
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            BeginPaint(hWnd, &ps);
-            // TODO: Hier beliebigen Zeichnungscode hinzufügen ...
+            HDC hdc = BeginPaint(hWnd, &ps);
+            
+            simulation.getCurrent()->stateToWindow(hdc);
+
             EndPaint(hWnd, &ps);
         }
         break;
