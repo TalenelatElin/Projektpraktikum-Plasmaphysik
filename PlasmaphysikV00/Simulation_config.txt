@@ -1,4 +1,4 @@
 // Hier sind die Informationen über das Ausmaß/Form der Simulation gespeichert
 
-sim_len=100
+sim_len=1000
 depth=1

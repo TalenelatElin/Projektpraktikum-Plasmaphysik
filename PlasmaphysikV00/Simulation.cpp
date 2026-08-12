@@ -16,51 +16,8 @@
 //          Der Systemzustand ist ein eigenes Objekt, diese Klasse produziert nur neue Zustände
 //
 
-Simulation::Simulation()
-{
-    current = 0;
-    current_id = 0;
-    depth = 1;
-    sim_len = 10;
-    ghWnd = nullptr;
-    ghdc = nullptr;
-    Initialize();
-}
 
-void Simulation::Initialize()
-{
-    translate_SimulationConfig("Simulation_config.txt");
-    translate_AnfangsConfig("Anfangszustaende.inc");
-
-    Reset();
-
-    setCurrent();
-}
-
-
-
-void Simulation::Stop()
-{
-    stop = true;
-}
-void Simulation::Reset()
-{
-    entwicklung.resize(sim_len);
-    for (int i = 0; i < depth; i++) {
-        entwicklung[i] = startzust[i];
-    }
-    current = startzustaende.back();
-    unsigned int current_id = static_cast<unsigned int>(depth - 1);
-
-    RECT rect;
-    GetClientRect(ghWnd, &rect);
-
-    FillRect(ghdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-
-    ReleaseDC(ghWnd, ghdc);
-}
-
-void Simulation::Start()
+void Simulation::Start() // TODO: Random generator 
 {
     unsigned int j = static_cast<unsigned int>(depth);
     while (stop == false && j < sim_len)
@@ -77,17 +34,6 @@ void Simulation::Start()
     }
     stop = false;
 }
-
-void Simulation::setCurrent()
-{
-    current = &entwicklung[current_id];
-}
-void Simulation::setCurrent(int j)
-{
-    current_id = j;
-    current = &entwicklung[j];
-}
-
 
 
 Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous) // TODO
@@ -116,7 +62,9 @@ Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous) // TODO
 }
 
 
-void Simulation::translate_AnfangsConfig(std::string dateiname)
+
+
+void Simulation::translate_AnfangsConfig(std::string dateiname) // TODO: Wie behandle ich vektoren die zu einem teilchen gehören?
 {
     startzust.resize(depth);
     startzustaende.resize(depth);
@@ -172,12 +120,38 @@ void Simulation::translate_SimulationConfig(std::string dateiname)  // TODO: fü
 }
 
 
+
+
+void Simulation::update()
+{
+    setCurrent();
+
+    std::wstring text = std::to_wstring(100*current_id/sim_len) + L" %";
+
+    TextOutW(ghdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
+
+    if (ghWnd != nullptr){
+        PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
+    }
+}
+void Simulation::update(int j)
+{
+    setCurrent(j);
+
+    std::wstring text = std::to_wstring(100 * current_id / sim_len) + L" %";
+
+    TextOutW(ghdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
+
+    if (ghWnd != nullptr){
+        PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
+    }
+}
 void Simulation::download(std::string dateiname) {
     std::string datei_string = "";
     for (int j = 0; j < sim_len; j++) {
         //if (entwicklung[j] != 0) {
-            datei_string += entwicklung[j].stateToString();
-            datei_string += "\n";
+        datei_string += entwicklung[j].stateToString();
+        datei_string += "\n";
         //}
     }
     std::ofstream file(dateiname);
@@ -193,62 +167,61 @@ void Simulation::download(std::string dateiname) {
 }
 
 
-Sim_Sys_State* Simulation::getCurrent()
+Simulation::Simulation()
 {
-    return current;
+    current = 0;
+    current_id = 0;
+    depth = 1;
+    sim_len = 10;
+    ghWnd = nullptr;
+    ghdc = nullptr;
+    Initialize();
 }
+void Simulation::Initialize()
+{
+    translate_SimulationConfig("Simulation_config.txt");
+    translate_AnfangsConfig("Anfangszustaende.inc");
 
+    Reset();
 
+    setCurrent();
+}
+void Simulation::Stop()
+{
+    stop = true;
+}
 void Simulation::giveWindow(HWND phWnd)
 {
     ghWnd = phWnd;
     HDC hdc = GetDC(ghWnd);
     ghdc = hdc;
 }
-
-void Simulation::update()
+Sim_Sys_State* Simulation::getCurrent()
 {
-    setCurrent();
-
-    std::wstring text = std::to_wstring(100*current_id/sim_len) + L" %";
-
-    TextOutW(
-        ghdc,
-        20, 20,
-        text.c_str(),
-        static_cast<int>(text.length())
-    );
-
-    if (ghWnd != nullptr)
-    {
-        PostMessage(
-            ghWnd,
-            WM_SIMULATION_UPDATE,
-            0,
-            0
-        );
-    }
+    return current;
 }
-void Simulation::update(int j)
+void Simulation::setCurrent()
 {
-    setCurrent(j);
-
-    std::wstring text = std::to_wstring(100 * current_id / sim_len) + L" %";
-
-    TextOutW(
-        ghdc,
-        20, 20,
-        text.c_str(),
-        static_cast<int>(text.length())
-    );
-
-    if (ghWnd != nullptr)
-    {
-        PostMessage(
-            ghWnd,
-            WM_SIMULATION_UPDATE,
-            0,
-            0
-        );
+    current = &entwicklung[current_id];
+}
+void Simulation::setCurrent(int j)
+{
+    current_id = j;
+    current = &entwicklung[j];
+}
+void Simulation::Reset()
+{
+    entwicklung.resize(sim_len);
+    for (int i = 0; i < depth; i++) {
+        entwicklung[i] = startzust[i];
     }
+    current = startzustaende.back();
+    unsigned int current_id = static_cast<unsigned int>(depth - 1);
+
+    RECT rect;
+    GetClientRect(ghWnd, &rect);
+
+    FillRect(ghdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
+    ReleaseDC(ghWnd, ghdc);
 }

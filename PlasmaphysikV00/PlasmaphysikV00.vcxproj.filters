@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Ressourcendateien\Configs">
+      <UniqueIdentifier>{eaed5850-c0ac-40d1-8228-76b27ce9dc72}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -59,22 +62,22 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Anfangszustaende.inc">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
-    <Text Include="System_config.inc">
-      <Filter>Ressourcendateien</Filter>
-    </Text>
     <Text Include="Konstanten_config.inc">
-      <Filter>Ressourcendateien</Filter>
+      <Filter>Ressourcendateien\Configs</Filter>
+    </Text>
+    <Text Include="Anfangszustaende.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
     </Text>
     <Text Include="Simulation_config.txt">
-      <Filter>Ressourcendateien</Filter>
+      <Filter>Ressourcendateien\Configs</Filter>
+    </Text>
+    <Text Include="System_config.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
     <None Include="Teilchen_config.inc">
-      <Filter>Ressourcendateien</Filter>
+      <Filter>Ressourcendateien\Configs</Filter>
     </None>
   </ItemGroup>
 </Project>

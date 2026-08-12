@@ -6,24 +6,47 @@
 #include <string>
 #include <sstream>
 
+
+// Makros zur Implementierung aus der Teilchen_config datei
+#define SET(type, name, value)
+#define VEC(type, name, size)
+#define FUNCTION(returnType, name, args, body) returnType Teilchen::name args body
+
+#include "Teilchen_config.inc"
+
+#undef FUNCTION
+#undef VEC
+#undef SET
+
+
+// Makros zur Implementierung aus der System_config datei
+#define SET(type, name, value)
+#define VEC(type, name, size)
+#define FUNCTION(returnType, name, args, body) returnType Sim_Sys_State::name args body
+
+#include "System_config.inc"
+
+#undef FUNCTION
+#undef VEC
+#undef SET
+
+
+
 template<typename T>
 std::string toString(const T& value)
 {
     if constexpr (std::is_same_v<T, Teilchen>) {
         std::ostringstream ss;
 
-        //====
         // Makros für die Variablennamen aus der System_config datei
         #define SET(type, name, wert) ss << toString(value.name) << " ";
-
+        #define VEC(type, name, size) ss << toString(value.name) << " ";
         #define FUNCTION(returnType, name, args, body)
-        #define EQUATION(returnType, name, args, body)
-        // nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
 
         #include "Teilchen_config.inc"
 
-        #undef EQUATION
         #undef FUNCTION
+        #undef VEC
         #undef SET
 
         return ss.str();
@@ -57,72 +80,15 @@ std::string toString(const std::vector<Q>& values)
 
 
 
-//====
-// Makros zur Implementierung aus der Teilchen_config datei
-#define SET(type, name, value)
-// nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
-
-#define FUNCTION(returnType, name, args, body) \
-    returnType Teilchen::name args body
-
-#define EQUATION(returnType, name, args, body) \
-    returnType Teilchen::name args body
-
-#include "Teilchen_config.inc"
-
-#undef EQUATION
-#undef FUNCTION
-#undef SET
-
-
-//====
-// Makros zur Implementierung aus der System_config datei
-#define SET(type, name, value)
-// nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
-#define VEC(type, name, size)
-
-#define FUNCTION(returnType, name, args, body) \
-    returnType Sim_Sys_State::name args body
-
-#define EQUATION(returnType, name, args, body) \
-    returnType Sim_Sys_State::name args body
-
-#include "System_config.inc"
-
-#undef EQUATION
-#undef FUNCTION
-#undef VEC
-#undef SET
 
 
 
 
 
-std::string Sim_Sys_State::stateToString()
-{
-    std::ostringstream ss;
-    //====
-    // Makros für die Variablennamen aus der System_config datei
-    #define SET(type, name, value) \
-        ss << toString(name) << " ";    // printet einfach den wert der aktuellen Variable aus?
-    #define VEC(type, name, size) \
-        ss << toString(name) << " ";
 
-    #define FUNCTION(returnType, name, args, body)
-    #define EQUATION(returnType, name, args, body)
-    // nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
 
-    #include "System_config.inc"
 
-    #undef EQUATION
-    #undef FUNCTION
-    #undef VEC
-    #undef SET
-
-    return ss.str();
-}
-
-void Sim_Sys_State::stateToWindow(HDC hdc, int h, int b)
+void Sim_Sys_State::stateToWindow(HDC hdc, int h, int b) // TODO
 {
     for (int i = 0; i < N; i++) {
         int x = 1;//particles[i].x;
@@ -131,37 +97,62 @@ void Sim_Sys_State::stateToWindow(HDC hdc, int h, int b)
     }
 }
 
+
+std::string Sim_Sys_State::stateToString()
+{
+    std::ostringstream ss;
+    // Makros für die Variablennamen aus der System_config datei
+    #define SET(type, name, value) ss << toString(name) << " ";
+    #define VEC(type, name, size) ss << toString(name) << " ";
+    #define FUNCTION(returnType, name, args, body)
+
+    #include "System_config.inc"
+
+    #undef FUNCTION
+    #undef VEC
+    #undef SET
+
+    return ss.str();
+}
+
+
+
+
 //
 // Klassen Trivia
 //
 
+
 Teilchen::Teilchen() {
     ID = 0;
+    // Makros zur Implementierung aus der System_config datei
+    #define SET(type, name, value) // nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
+    #define VEC(type, name, size) name.resize(size);
+    #define FUNCTION(returnType, name, args, body)
+
+    #include "Teilchen_config.inc"
+
+    #undef FUNCTION
+    #undef VEC
+    #undef SET
 }
 Teilchen::Teilchen(const unsigned int p) {
     ID = p;
 }
-unsigned int Teilchen::getID()
-{
+unsigned int Teilchen::getID() {
     return ID;
 }
 
 
 Sim_Sys_State::Sim_Sys_State() {
     ID = 0;
-    //====
     // Makros zur Implementierung aus der System_config datei
-    #define SET(type, name, value)
-    // nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
+    #define SET(type, name, value) // nichts erzeugen, Varialblen sind bereits in der Header Datei gesetzt
     #define VEC(type, name, size) name.resize(size);
-
     #define FUNCTION(returnType, name, args, body)
-
-    #define EQUATION(returnType, name, args, body)
 
     #include "System_config.inc"
 
-    #undef EQUATION
     #undef FUNCTION
     #undef VEC
     #undef SET

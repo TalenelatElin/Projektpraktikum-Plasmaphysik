@@ -18,19 +18,12 @@ SET(double, z, 0)
 FUNCTION(double, getDistanceSQ, (), {
     return x*x+y*y+z*z;
 })
-
-
-//
-// Gleichngen:
-// EQUATION(return type, name, args, expression)
-//+q*std::abs(x)/((x*x+y*y+z*z)*x)
-//
-EQUATION(double, x_new, (double p), {
+FUNCTION(double, x_new, (double p), {
     return x+p*dx;
 })
-EQUATION(double, y_new, (double p), {
+FUNCTION(double, y_new, (double p), {
     return y+p*dy;
 })
-EQUATION(double, z_new, (double p), {
+FUNCTION(double, z_new, (double p), {
     return z+p*dz;
 })

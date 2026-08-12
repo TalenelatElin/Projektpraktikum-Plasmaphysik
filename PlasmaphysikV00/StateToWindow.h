@@ -17,13 +17,9 @@ public:
 
     //====
     // Makros um die Form des Zustandes aus der System_config Datei abzulesen
-    #define SET(type, name, value)type name = value;
-
-    #define FUNCTION(returnType, name, args, body) \
-                returnType name args;
-
-    #define EQUATION(returnType, name, args, body) \
-                    returnType name args;
+    #define SET(type, name, value) type name = value;
+    #define FUNCTION(returnType, name, args, body) returnType name args;
+    #define EQUATION(returnType, name, args, body) returnType name args;
 
     #include "Teilchen_config.inc"
 
@@ -34,6 +30,7 @@ public:
 private:
     unsigned int ID;
 };
+
 
 //
 // Klasse: Systemzustand
@@ -56,12 +53,8 @@ public:
     #define VEC(type, name, size) type name;
     #define FUNCTION(returnType, name, args, body) returnType name args;
 
-    #define EQUATION(returnType, name, args, body) \
-            returnType name args;
-
     #include "System_config.inc"
 
-    #undef EQUATION
     #undef FUNCTION
     #undef VEC
     #undef SET
@@ -69,6 +62,3 @@ public:
 private:
     unsigned int ID;
 };
-
-
-

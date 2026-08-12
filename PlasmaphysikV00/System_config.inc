@@ -21,11 +21,3 @@ VEC(std::vector<double>, probs, 3*N)
 //    return x*x+y*y+z*z;
 //})
 
-
-//
-// Gleichngen:
-// EQUATION(return type, name, args, expression)
-// Keine Teilchen Interaktionen
-//EQUATION(double, x_new, (), {
-//    return x+0.5*dx+q*(std::abs(x)/x)/getDistanceSQ();   // in {} dürfen keine kommas vorkommen.
-//})

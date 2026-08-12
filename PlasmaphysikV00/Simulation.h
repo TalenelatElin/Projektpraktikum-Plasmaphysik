@@ -14,7 +14,6 @@ class Simulation
 {
 public:
     Simulation();
-
     void Initialize();
     void Start();
     void Stop();

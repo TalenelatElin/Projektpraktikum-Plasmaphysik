@@ -7,3 +7,4 @@
 // Anfangszustände
 //
 
+// SET(double, x, 0)
