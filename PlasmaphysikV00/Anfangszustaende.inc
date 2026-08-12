@@ -6,6 +6,4 @@
 //
 // Anfangszustände
 //
-SET(ps, 510, 4546)
-SET(gewicht, 510, 4546)
 

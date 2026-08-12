@@ -153,7 +153,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_SIMULATION_ANHALTEN:
                 simulation.Stop();
-                simulationThread.request_stop();
                 break;
             case ID_SIMULATION_UPDATE:
                 PostMessage(
@@ -166,8 +165,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case ID_SIMULATION_RESET:
                 simulation.Reset();
                 break;
-            case ID_SIMULATION_EINSTELLUNGEN:
-                simulationThread.request_stop();
+            case ID_SIMULATION_EINSTELLUNGEN:   // TODO
+
                 break;
 
 
@@ -176,6 +175,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 simulation.download("Entwicklung_simuliert");
                 break;
             case IDM_EXIT:
+                simulation.Stop();
+                simulationThread.request_stop();
                 DestroyWindow(hWnd);
                 break;
             case IDM_ABOUT:
@@ -188,7 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_SIMULATION_UPDATE:
         {
-            InvalidateRect(hWnd, nullptr, FALSE);
+            InvalidateRect(hWnd, nullptr, TRUE);
             break;
         }
 
@@ -197,12 +198,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             
-            simulation.getCurrent()->stateToWindow(hdc);
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+            int breite = rect.right - rect.left;
+            int hoehe = rect.bottom - rect.top;
+
+            SetPixel(hdc,int(breite/2), int(hoehe / 2), RGB(255, 0, 0));
+
+            simulation.getCurrent()->stateToWindow(hdc, hoehe, breite);
 
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
+        simulation.Stop();
+        simulationThread.request_stop();
         PostQuitMessage(0);
         break;
     default:
