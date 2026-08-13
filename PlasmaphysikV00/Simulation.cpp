@@ -3,9 +3,19 @@
 #include "StateToWindow.h"
 #include <fstream>
 #include "Konstanten_config.inc"
-#include <random>
 
 
+void paintProgress(const HDC hdc, float p);
+
+// Alternativer Einstieg, falls Ausführung aus dem Terminal
+int main()
+{
+    Simulation s;
+    s.Initialize();
+    s.Start();
+    s.download();
+    return 0;
+}
 
 
 
@@ -17,46 +27,72 @@
 //
 
 
-void Simulation::Start() // TODO: Random generator 
+void Simulation::Start() // TODO: Verbessern des Random generator 
 {
+    // Random generator:
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    //std::uniform_int_distribution<double> dist(0, 1);
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+
     unsigned int j = static_cast<unsigned int>(depth);
     while (stop == false && j < sim_len)
     {
-        std::vector<Sim_Sys_State*> previous(5, nullptr);
+        std::vector<Sim_Sys_State*> previous(depth, nullptr);
         for (int i = 0; i < depth; i++) {
             previous[i] = &entwicklung[j - depth + i];
         }
-        entwicklung[j] = next(previous);
+        entwicklung[j] = next(previous, gen, dist);
 
-        current_id = j;
-        update();
+        unsigned int r = max(1, sim_len / nr_updates);
+        if (j % r == 0) {
+            update(j);
+        }
         j += 1;
     }
     stop = false;
 }
 
 
-Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous) // TODO
+Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous, std::mt19937& gen, std::uniform_real_distribution<double>& dist) // TODO
 {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dist(0, 1);
-    std::vector<double> p;
+    std::vector<double> p; //Ist das überhaupt nötig?
+
     p.resize(3 * N);
     for (int l = 0; l < 3*N; l++) {
-        p[l] = dist(gen) - 0.5;
+        p[l] = 2*dist(gen) - 1;
     }
-
-    Sim_Sys_State z = *(previous[0]);
 
     Sim_Sys_State z_new;
-    z_new.probs = p;
+
+    context c(depth);
+    c.prevs = previous;
 
     for (int l = 0; l < N; l++) {
-        //z_new.particles[l].x = z.particles[l].x_new(p[l]);
-        //z_new.particles[l].y = z.particles[l].y_new(p[l+1]);
-        //z_new.particles[l].z = z.particles[l].z_new(p[l+2]);
+        z_new.particles[l].id = l;
+
+        c.px = p[3 * l];
+        c.py = p[3 * l + 1];
+        c.pz = p[3 * l + 2];
+
+        
+
+        #define SET(type, name, value)
+        #define VEC(type, name, size)
+        #define FUNCTION(returnType, name, args, body)
+        #define EVOLUTION(returnType, name, args, body) \
+            z_new.particles[l].name = c.prevs.back()->particles[l].evolve_##name(c);
+
+        #include "Teilchen_config.inc"
+
+        #undef EVOLUTION
+        #undef FUNCTION
+        #undef VEC
+        #undef SET
     }
+    z_new.setDistanzen();
+    z_new.MSD = c.prevs.back()->getMeanSquare();
 
     return z_new;
 }
@@ -71,7 +107,7 @@ void Simulation::translate_AnfangsConfig(std::string dateiname) // TODO: Wie beh
     if (dateiname != "Anfangszustaende.inc") { // Ansonsten Codeänderung nötig.
         return;
     }
-    if (depth > 1) {
+    if (depth > 2) {
         for (unsigned int i = 0; i < depth; i++) {
             // Makros zum Übersetzen der Anfangszustände
             #define SET(name, ...) \
@@ -91,9 +127,9 @@ void Simulation::translate_AnfangsConfig(std::string dateiname) // TODO: Wie beh
     }
 }
 
-void Simulation::translate_SimulationConfig(std::string dateiname)  // TODO: füllen aller nötigen Config-Parameter
+void Simulation::translate_SimulationConfig(std::string pdateiname)  // TODO: füllen aller nötigen Config-Parameter
 {
-    std::ifstream file(dateiname);
+    std::ifstream file(pdateiname);
 
     std::string line;
 
@@ -114,21 +150,27 @@ void Simulation::translate_SimulationConfig(std::string dateiname)  // TODO: fü
             {
                 depth = std::stoull(value);
             }  
+            else if (key == "nr_updates")
+            {
+                nr_updates = std::stoull(value);
+            }
+            else if (key == "dateiname")
+            {
+                dateiname = value;
+            }
+            else if (key == "h")
+            {
+                h = std::stoull(value);
+            }
             // Und so weiter und so fort
         }
     }
 }
 
 
-
-
 void Simulation::update()
 {
-    setCurrent();
-
-    std::wstring text = std::to_wstring(100*current_id/sim_len) + L" %";
-
-    TextOutW(ghdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
+    paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
 
     if (ghWnd != nullptr){
         PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
@@ -138,22 +180,19 @@ void Simulation::update(int j)
 {
     setCurrent(j);
 
-    std::wstring text = std::to_wstring(100 * current_id / sim_len) + L" %";
-
-    TextOutW(ghdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
-
-    if (ghWnd != nullptr){
-        PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
-    }
+    update();
 }
-void Simulation::download(std::string dateiname) {
+void Simulation::download() {
     std::string datei_string = "";
-    for (int j = 0; j < sim_len; j++) {
+    for (int j = 0; j < sim_len && !stop; j++) {
         //if (entwicklung[j] != 0) {
         datei_string += entwicklung[j].stateToString();
         datei_string += "\n";
         //}
+
+        paintProgress(ghdc, static_cast<float>(j)/sim_len);
     }
+    stop = false;
     std::ofstream file(dateiname);
 
     if (!file.is_open())
@@ -175,6 +214,9 @@ Simulation::Simulation()
     sim_len = 10;
     ghWnd = nullptr;
     ghdc = nullptr;
+    nr_updates = 100;
+    h = 0.1;
+    dateiname = "Simul.txt";
     Initialize();
 }
 void Simulation::Initialize()
@@ -195,6 +237,11 @@ void Simulation::giveWindow(HWND phWnd)
     ghWnd = phWnd;
     HDC hdc = GetDC(ghWnd);
     ghdc = hdc;
+}
+void Simulation::giveWindow(HWND phWnd, HDC phdc)
+{
+    ghWnd = phWnd;
+    ghdc = phdc;
 }
 Sim_Sys_State* Simulation::getCurrent()
 {
@@ -224,4 +271,15 @@ void Simulation::Reset()
     FillRect(ghdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
     ReleaseDC(ghWnd, ghdc);
+}
+
+
+
+
+void paintProgress(const HDC hdc, float p) {
+    if (hdc != nullptr) {
+        std::wstring text = std::to_wstring(100 * p) + L" %";
+
+        TextOutW(hdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
+    }
 }

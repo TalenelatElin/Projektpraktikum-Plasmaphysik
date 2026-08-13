@@ -16,6 +16,9 @@
     <Filter Include="Ressourcendateien\Configs">
       <UniqueIdentifier>{eaed5850-c0ac-40d1-8228-76b27ce9dc72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Ressourcendateien\Teilchenconfigs">
+      <UniqueIdentifier>{9337804b-018a-46db-8656-947db9ce9d42}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -73,6 +76,15 @@
     </Text>
     <Text Include="System_config.inc">
       <Filter>Ressourcendateien\Configs</Filter>
+    </Text>
+    <Text Include="Coulomb_exact.txt">
+      <Filter>Ressourcendateien\Teilchenconfigs</Filter>
+    </Text>
+    <Text Include="Brown_exact.txt">
+      <Filter>Ressourcendateien\Teilchenconfigs</Filter>
+    </Text>
+    <Text Include="Coulomb_approx.txt">
+      <Filter>Ressourcendateien\Teilchenconfigs</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

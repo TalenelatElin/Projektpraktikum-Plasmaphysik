@@ -5,6 +5,5 @@
 
 //
 // Anfangszustände
-//
-
-// SET(double, x, 0)
+// SET(type, name, wert_0, wert_1, wert_2, ...)
+// VEC(double, x, 0) ?????????

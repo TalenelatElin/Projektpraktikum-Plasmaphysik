@@ -6,18 +6,37 @@
 // Variablen: Falls nur ein Startzustand nötig ist, dann wird dieser von hier extrahiert. Dann ist keine Implementation in Anfangsustände nötig.
 //            Die Reihenfolge ist wichtig
 //
-// SET(int, N, 1000)
+// SET(int, MSD, 0)
 //
-
+SET(double, MSD, 0)
 VEC(std::vector<Teilchen>, particles, N)
-VEC(std::vector<double>, probs, 3*N)
-
+MAT(double, distanzen, N, N)
 
 //
-// Funktionen:
+// Funktionen: Definieren Größen die mehrerere Teilchen zum errechnen brauchen.
 // FUNCTION(return type, name, args, expression)
 //
-//FUNCTION(double, getDistanceSQ, (), {
-//    return x*x+y*y+z*z;
-//})
+FUNCTION(double, squadd, (double a, double b, double c), {
+    return std::sqrt(a*a+b*b+c*c);
+})
 
+FUNCTION(void, setDistanzen, (), {
+    for (std::size_t i = 0; i < N; i++)
+    {
+        for (std::size_t j = i+1; j < N; j++)
+        {
+            double dist = squadd(particles[i].x-particles[j].x, particles[i].y-particles[j].y, particles[i].z-particles[j].z);
+            distanzen[i][j] = dist;
+            distanzen[j][i] = dist;
+        }
+    }
+})  
+
+FUNCTION(double, getMeanSquare, (), {
+    double mean_square = 0;
+    for (int i = 0; i < N; i++){
+        double r = particles[i].getDistance(); 
+        mean_square += r*r;
+    }
+    return mean_square/N;
+})

@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <random>
 
 // Wichtige Konstanten
 constexpr UINT WM_SIMULATION_UPDATE = WM_APP + 1;

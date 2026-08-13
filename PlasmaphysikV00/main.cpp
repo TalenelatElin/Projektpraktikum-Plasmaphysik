@@ -172,7 +172,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             // Default Menüpunkte:
             case ID_DATEI_DOWNLOADSIMULATION:
-                simulation.download("Entwicklung_simuliert");
+                simulationThread = std::jthread([]() {
+                    simulation.download();
+                });
+
                 break;
             case IDM_EXIT:
                 simulation.Stop();
@@ -202,8 +205,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             GetClientRect(hWnd, &rect);
             int breite = rect.right - rect.left;
             int hoehe = rect.bottom - rect.top;
-
-            SetPixel(hdc,int(breite/2), int(hoehe / 2), RGB(255, 0, 0));
 
             simulation.getCurrent()->stateToWindow(hdc, hoehe, breite);
 

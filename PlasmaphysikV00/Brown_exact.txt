@@ -32,25 +32,12 @@ FUNCTION(double, getDistance, (), {
 //                                      ^     ^
 //      
 EVOLUTION(double, x, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return x+c.px*dx;
-    }else{
-        return c.px*dx + 2*x -c.prevs[1]->particles[id].x + h*h*q*x/(r*r*r);
-    }})
+    return x + c.px*dx;
+})
 EVOLUTION(double, y, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return y+c.py*dy;
-    }else{
-        return c.py*dy + 2*y -c.prevs[1]->particles[id].y + h*h*q*y/(r*r*r);
-    }
+    return y + c.py*dy;
+
 })
 EVOLUTION(double, z, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return z+c.pz*dz;
-    }else{
-        return c.pz*dz + 2*z -c.prevs[1]->particles[id].z + h*h*q*z/(r*r*r);
-    }
+    return z + c.pz*dz;    
 })

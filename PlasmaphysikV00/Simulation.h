@@ -19,12 +19,12 @@ public:
     void Stop();
     void Reset();
     void giveWindow(HWND phWnd);
+    void giveWindow(HWND phWnd, HDC phdc);
 
     Sim_Sys_State* getCurrent();
     void update();
     void update(int j);
-    void download(std::string dateiname);
-
+    void download();
 
 private:
     HWND ghWnd;
@@ -39,12 +39,14 @@ private:
     std::vector<Sim_Sys_State> entwicklung;
 
     std::size_t depth;                                                  // depth = startzustaende.size()
-    Sim_Sys_State next(std::vector<Sim_Sys_State*>& previous);
+    Sim_Sys_State next(std::vector<Sim_Sys_State*>& previous, std::mt19937& gen, std::uniform_real_distribution<double>& dist);
 
     void setCurrent();
     void setCurrent(int j);
 
     Sim_Sys_State* current;
+    std::string dateiname;
     unsigned int current_id;
-
+    unsigned int nr_updates;
+    double h;
 };

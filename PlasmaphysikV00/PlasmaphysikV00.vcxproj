@@ -160,6 +160,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Anfangszustaende.inc" />
+    <Text Include="Brown_exact.txt" />
+    <Text Include="Coulomb_approx.txt" />
+    <Text Include="Coulomb_exact.txt" />
     <Text Include="Konstanten_config.inc" />
     <Text Include="Simulation_config.txt" />
     <Text Include="System_config.inc" />
