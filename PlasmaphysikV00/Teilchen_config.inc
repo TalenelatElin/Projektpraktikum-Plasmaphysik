@@ -7,16 +7,16 @@
 //            Die Reihenfolge ist wichtig
 //            Aus Speichergründen stehen hier nur variablen die sich unter der Systementwicklung ändern. Konstanten gehören in Konstanten_config.inc
 //
-SET(double, x, 0)
-SET(double, y, 0)
-SET(double, z, 0)
+SET(float, x, 0)
+SET(float, y, 0)
+SET(float, z, 0)
 
 
 //
 // Funktionen: Definieren errechenbare Größen aus den Variablen.
 // FUNCTION(return type, name, args, expression)
 //
-FUNCTION(double, getDistance, (), {
+FUNCTION(float, getDistance, (), {
     return std::sqrt(x*x+y*y+z*z);
 })
 
@@ -27,30 +27,17 @@ FUNCTION(double, getDistance, (), {
 // Funktionen: Evolutionen der einzelnen Größen. Dies entspricht also den Bewegungsgleichungen.
 //             Es ist wichtig, dass hier die Namen (und selbe Rückgabetypen) der Teilchenzustandsparameter stehen
 //
-//        Bsp: oben steht:       SET( double, x,  0)
-//              dann muss: EVOLUTION( double, x,  const context& c, expression)
+//        Bsp: oben steht:       SET( float, x,  0)
+//              dann muss: EVOLUTION( float, x,  const context& c, expression)
 //                                      ^     ^
 //      
-EVOLUTION(double, x, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return x+c.px*dx;
-    }else{
-        return c.px*dx + 2*x -c.prevs[1]->particles[id].x + h*h*q*x/(r*r*r);
-    }})
-EVOLUTION(double, y, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return y+c.py*dy;
-    }else{
-        return c.py*dy + 2*y -c.prevs[1]->particles[id].y + h*h*q*y/(r*r*r);
-    }
+EVOLUTION(float, x, (const context& c), {
+    return x + c.px*dx;
 })
-EVOLUTION(double, z, (const context& c), {
-    double r = getDistance();
-    if (r == 0) {
-        return z+c.pz*dz;
-    }else{
-        return c.pz*dz + 2*z -c.prevs[1]->particles[id].z + h*h*q*z/(r*r*r);
-    }
+EVOLUTION(float, y, (const context& c), {
+    return y + c.py*dy;
+
+})
+EVOLUTION(float, z, (const context& c), {
+    return z + c.pz*dz;    
 })

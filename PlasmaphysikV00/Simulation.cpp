@@ -2,10 +2,11 @@
 #include "Simulation.h"
 #include "StateToWindow.h"
 #include <fstream>
+#include <filesystem>
 #include "Konstanten_config.inc"
 
 
-void paintProgress(const HDC hdc, float p);
+
 
 // Alternativer Einstieg, falls Ausführung aus dem Terminal
 int main()
@@ -19,6 +20,7 @@ int main()
 
 
 
+
 //
 // Klasse: Simulation
 //
@@ -27,23 +29,25 @@ int main()
 //
 
 
-void Simulation::Start() // TODO: Verbessern des Random generator 
+void Simulation::Start() // TODO
 {
     // Random generator:
     std::random_device rd;
     std::mt19937 gen(rd());
-    //std::uniform_int_distribution<double> dist(0, 1);
+    //std::uniform_int_distribution<int> dist(0, 1);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
 
     unsigned int j = static_cast<unsigned int>(depth);
     while (stop == false && j < sim_len)
     {
-        std::vector<Sim_Sys_State*> previous(depth, nullptr);
+        context c(depth, h);
+
         for (int i = 0; i < depth; i++) {
-            previous[i] = &entwicklung[j - depth + i];
+            c.prevs[i] = &entwicklung[j - depth + i];
         }
-        entwicklung[j] = next(previous, gen, dist);
+        entwicklung[j] = next(c, gen, dist);
+
 
         unsigned int r = max(1, sim_len / nr_updates);
         if (j % r == 0) {
@@ -55,19 +59,15 @@ void Simulation::Start() // TODO: Verbessern des Random generator
 }
 
 
-Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous, std::mt19937& gen, std::uniform_real_distribution<double>& dist) // TODO
+Sim_Sys_State Simulation::next(context& c, std::mt19937& gen, std::uniform_real_distribution<double>& dist) // TODO
 {
     std::vector<double> p; //Ist das überhaupt nötig?
-
     p.resize(3 * N);
     for (int l = 0; l < 3*N; l++) {
         p[l] = 2*dist(gen) - 1;
     }
 
     Sim_Sys_State z_new;
-
-    context c(depth);
-    c.prevs = previous;
 
     for (int l = 0; l < N; l++) {
         z_new.particles[l].id = l;
@@ -91,7 +91,7 @@ Sim_Sys_State Simulation::next(std::vector<Sim_Sys_State*>& previous, std::mt199
         #undef VEC
         #undef SET
     }
-    z_new.setDistanzen();
+    //z_new.setDistanzen();
     z_new.MSD = c.prevs.back()->getMeanSquare();
 
     return z_new;
@@ -182,27 +182,26 @@ void Simulation::update(int j)
 
     update();
 }
-void Simulation::download() {
-    std::string datei_string = "";
-    for (int j = 0; j < sim_len && !stop; j++) {
-        //if (entwicklung[j] != 0) {
-        datei_string += entwicklung[j].stateToString();
-        datei_string += "\n";
-        //}
 
-        paintProgress(ghdc, static_cast<float>(j)/sim_len);
-    }
-    stop = false;
-    std::ofstream file(dateiname);
 
-    if (!file.is_open())
+
+void Simulation::download()
+{
+    namespace fs = std::filesystem;
+    const fs::path dateipfad = fs::path("..") / "Diffusionstest" / "Data" / dateiname;
+    std::ofstream file(dateipfad);
+
+    if (!file)
+        return;
+
+    for (int j = 0; j < sim_len && !stop; ++j)
     {
-        return; // Datei konnte nicht geöffnet werden
+        file << entwicklung[j].stateToString() << '\n';
+
+        paintProgress(ghdc, static_cast<float>(j + 1) / sim_len);
     }
 
-    file << datei_string;
-
-    file.close();
+    stop = false;
 }
 
 
@@ -265,21 +264,24 @@ void Simulation::Reset()
     current = startzustaende.back();
     unsigned int current_id = static_cast<unsigned int>(depth - 1);
 
-    RECT rect;
-    GetClientRect(ghWnd, &rect);
+    if (ghWnd != nullptr && ghdc != nullptr )
+    {
+        RECT rect;
+        GetClientRect(ghWnd, &rect);
 
-    FillRect(ghdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+        FillRect(ghdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
-    ReleaseDC(ghWnd, ghdc);
+        ReleaseDC(ghWnd, ghdc);
+    }
 }
 
 
 
 
-void paintProgress(const HDC hdc, float p) {
-    if (hdc != nullptr) {
+void paintProgress(const HDC phdc, float p) {
+    if (phdc != nullptr) {
         std::wstring text = std::to_wstring(100 * p) + L" %";
 
-        TextOutW(hdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
+        TextOutW(phdc, 20, 20, text.c_str(), static_cast<int>(text.length()));
     }
 }

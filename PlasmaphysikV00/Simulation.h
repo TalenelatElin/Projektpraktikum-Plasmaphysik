@@ -3,6 +3,8 @@
 #include "framework.h"
 #include "StateToWindow.h"
 
+int main();
+void paintProgress(const HDC hdc, float p);
 
 //
 // Klasse: Simulation
@@ -25,6 +27,7 @@ public:
     void update();
     void update(int j);
     void download();
+    float h;
 
 private:
     HWND ghWnd;
@@ -39,7 +42,7 @@ private:
     std::vector<Sim_Sys_State> entwicklung;
 
     std::size_t depth;                                                  // depth = startzustaende.size()
-    Sim_Sys_State next(std::vector<Sim_Sys_State*>& previous, std::mt19937& gen, std::uniform_real_distribution<double>& dist);
+    Sim_Sys_State next(context& c, std::mt19937& gen, std::uniform_real_distribution<double>& dist);
 
     void setCurrent();
     void setCurrent(int j);
@@ -48,5 +51,4 @@ private:
     std::string dateiname;
     unsigned int current_id;
     unsigned int nr_updates;
-    double h;
 };

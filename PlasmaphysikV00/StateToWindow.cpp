@@ -173,6 +173,7 @@ Sim_Sys_State::Sim_Sys_State(const unsigned int p) {
 
 
 
-context::context(unsigned int d){
+context::context(unsigned int d, float ph){
+    h = ph;
     prevs.resize(d);
 }

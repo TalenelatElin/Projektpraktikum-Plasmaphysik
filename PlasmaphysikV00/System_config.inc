@@ -8,15 +8,15 @@
 //
 // SET(int, MSD, 0)
 //
-SET(double, MSD, 0)
+SET(float, MSD, 0)
 VEC(std::vector<Teilchen>, particles, N)
-MAT(double, distanzen, N, N)
+MAT(float, distanzen, N, N)
 
 //
 // Funktionen: Definieren Größen die mehrerere Teilchen zum errechnen brauchen.
 // FUNCTION(return type, name, args, expression)
 //
-FUNCTION(double, squadd, (double a, double b, double c), {
+FUNCTION(float, squadd, (float a, float b, float c), {
     return std::sqrt(a*a+b*b+c*c);
 })
 
@@ -25,17 +25,17 @@ FUNCTION(void, setDistanzen, (), {
     {
         for (std::size_t j = i+1; j < N; j++)
         {
-            double dist = squadd(particles[i].x-particles[j].x, particles[i].y-particles[j].y, particles[i].z-particles[j].z);
+            float dist = squadd(particles[i].x-particles[j].x, particles[i].y-particles[j].y, particles[i].z-particles[j].z);
             distanzen[i][j] = dist;
             distanzen[j][i] = dist;
         }
     }
 })  
 
-FUNCTION(double, getMeanSquare, (), {
-    double mean_square = 0;
+FUNCTION(float, getMeanSquare, (), {
+    float mean_square = 0;
     for (int i = 0; i < N; i++){
-        double r = particles[i].getDistance(); 
+        float r = particles[i].getDistance(); 
         mean_square += r*r;
     }
     return mean_square/N;

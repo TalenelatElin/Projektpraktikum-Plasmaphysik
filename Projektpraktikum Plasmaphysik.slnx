@@ -1,7 +1,13 @@
 <Solution>
   <Configurations>
+    <Platform Name="Any CPU" />
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="Diffusionstest/Diffusionstest.pyproj" Type="888888a0-9f3d-457c-b088-3a5042f75d52" Id="362e091b-07d0-46fc-8e8c-266f9821e2c4">
+    <Platform Project="AnyCPU" />
+    <Build Project="false" />
+  </Project>
   <Project Path="PlasmaphysikV00/PlasmaphysikV00.vcxproj" Id="750dee4b-879a-4342-9ffa-c3832ca191fe" />
+  <Project Path="Simulator_Pythonmodul/Simulator_Pythonmodul.vcxproj" Id="aea93edf-f358-4322-8e95-b2b5e59f8109" />
 </Solution>

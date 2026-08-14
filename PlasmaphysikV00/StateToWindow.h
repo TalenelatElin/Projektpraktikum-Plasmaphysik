@@ -14,10 +14,12 @@ class Sim_Sys_State;
 class context // TODO: Allgemeiner machen
 {
 public:
-    context(unsigned int d);
-    double px = 0;
-    double py = 0;
-    double pz = 0;
+    context(unsigned int d, float ph);
+
+    float px = 0;
+    float py = 0;
+    float pz = 0;
+    float h;
     std::vector<Sim_Sys_State*> prevs;
 
 private:

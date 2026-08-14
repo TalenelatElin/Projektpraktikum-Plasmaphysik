@@ -2,11 +2,11 @@
 // Hier können nur die Werte geändert werden!
 
 
-// Name der Datei die gedownloaded wird
-dateiname=neutron_radial_approx.txt
+// Name der Datei die gedownloaded wird (Keine Anführungszeichen!)
+dateiname=test_test.txt
 
 // Anzahl der Rekursionsschritte
-sim_len=1000
+sim_len=10
 
 // Anzahl der nötigen Anfangszustände bzw der Anzahl der vorherigen Zustände, die nötig sind um den nächsten auszurechnen (Rekursion!)
 depth=2
