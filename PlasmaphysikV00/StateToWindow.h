@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework.h"
+#include "../PlasmaphysikV00/framework.h"
 
 class Sim_Sys_State;
 
@@ -11,16 +11,14 @@ class Sim_Sys_State;
 //         context enthält randomness, sowie alle wichtigen Größen die aus der Zustandsklasse kommen können
 //
 //
-class context // TODO: Allgemeiner machen
+class context
 {
 public:
-    context(unsigned int d, float ph);
+    context(const float ph, const unsigned short pdepth, const std::size_t pN, const unsigned short pNumPara);
 
-    float px = 0;
-    float py = 0;
-    float pz = 0;
     float h;
     std::vector<Sim_Sys_State*> prevs;
+    std::vector<std::vector<double>> probs;
 
 private:
 };
@@ -36,18 +34,16 @@ private:
 class Teilchen
 {
 public:
-    Teilchen();
-    Teilchen(const unsigned int p);
-    unsigned int id;
+    Teilchen(const std::size_t pid);
+    std::size_t getid();
 
-    //====
-    // Makros um die Form des Zustandes aus der System_config Datei abzulesen
+    // Makros
     #define SET(type, name, value) type name = value;
     #define VEC(type, name, size) type name;
     #define FUNCTION(returnType, name, args, body) returnType name args;
     #define EVOLUTION(returnType, name, args, body) returnType evolve_##name args;
 
-    #include "Teilchen_config.inc"
+    #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
 
     #undef EVOLUTION
     #undef FUNCTION
@@ -55,6 +51,7 @@ public:
     #undef SET
 
 private:
+    std::size_t id;
 };
 
 
@@ -68,28 +65,35 @@ private:
 class Sim_Sys_State
 {
 public:
-    Sim_Sys_State();
-    Sim_Sys_State(const unsigned int p);
-    unsigned int ID;
+    Sim_Sys_State(const std::vector<Teilchen> pparticles);
+    Sim_Sys_State(const std::vector<Teilchen> pparticles, const std::size_t pID);
+    Sim_Sys_State(const std::size_t pN);
+    Sim_Sys_State(const std::size_t pN, const std::size_t pID);
+    std::size_t getID();
+
     void stateToWindow(HDC hdc, int h, int b);
     std::string stateToString();
 
+    std::vector<Teilchen> particles;
+
         
-    //====
-    // Makros um die Form des Zustandes aus der System_config Datei abzulesen
+    // Makros
     #define SET(type, name, value) type name = value;
     #define VEC(type, name, size) type name;
     #define MAT(type, name, size1, size2) std::vector<std::vector<type>> name;
     #define FUNCTION(returnType, name, args, body) returnType name args;
+    #define TRACK(returnType, name, args, body) returnType name args;
 
-    #include "System_config.inc"
+    #include "../PlasmaphysikV00/Configs/System_config.inc"
 
+    #undef TRACK
     #undef FUNCTION
     #undef MAT
     #undef VEC
     #undef SET
 
 private:
+    std::size_t ID;
 };
 
 

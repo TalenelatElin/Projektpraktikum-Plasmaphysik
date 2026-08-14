@@ -1,7 +1,8 @@
 #pragma once
 
-#include "framework.h"
-#include "StateToWindow.h"
+#include "../PlasmaphysikV00/framework.h"
+
+#include "../PlasmaphysikV00/StateToWindow.h"
 
 int main();
 void paintProgress(const HDC hdc, float p);
@@ -26,29 +27,37 @@ public:
     Sim_Sys_State* getCurrent();
     void update();
     void update(int j);
+    void make_save(Sim_Sys_State& current);
+    void make_save(Sim_Sys_State& current, std::string dateipfad);
     void download();
     float h;
 
 private:
     HWND ghWnd;
     HDC ghdc;
-    std::vector<Sim_Sys_State> startzust;
-    std::vector<Sim_Sys_State*> startzustaende;
-    bool stop = false;
-    void translate_SimulationConfig(std::string dateiname);
-    void translate_AnfangsConfig(std::string dateiname);
+    void translate_SimulationConfig();
+    void translate_AnfangsConfig();
 
-    std::size_t sim_len;                                                // sim_len > depth !!!
+    bool stop;
+    std::size_t sim_len;                            
+    unsigned short depth;                           // depth = startzustaende.size()
+    std::vector<Sim_Sys_State> startzustaende;
     std::vector<Sim_Sys_State> entwicklung;
 
-    std::size_t depth;                                                  // depth = startzustaende.size()
-    Sim_Sys_State next(context& c, std::mt19937& gen, std::uniform_real_distribution<double>& dist);
+    void evolve_system(const context& c);
+    context getContext(std::size_t current_index, std::mt19937& gen, std::uniform_real_distribution<double>& dist);
 
     void setCurrent();
-    void setCurrent(int j);
+    void shiftCurrent(int j);
 
-    Sim_Sys_State* current;
-    std::string dateiname;
-    unsigned int current_id;
-    unsigned int nr_updates;
+    std::string sim_data_name;
+    unsigned short current_id;                     // current_id < depth
+    std::size_t nr_updates;
+    std::size_t nr_saves;
+    std::size_t num_Para;
 };
+
+
+
+
+

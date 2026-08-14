@@ -1,25 +1,29 @@
-// header.h: Includedatei für Include-Standardsystemdateien
-// oder projektspezifische Includedateien.
-//
 
 #pragma once
 
-#include "targetver.h"
+
+#include "../PlasmaphysikV00/targetver.h"
 #define WIN32_LEAN_AND_MEAN             // Selten verwendete Komponenten aus Windows-Headern ausschließen
 // Windows-Headerdateien
 #include <windows.h>
 // C RunTime-Headerdateien
 #include <stdlib.h>
-#include <malloc.h>
+#include <malloc.h>1
 #include <memory.h>
 #include <tchar.h>
 
-// Weitere Includes
+// Nützliche Bibliotheken
 #include <iostream>
-#include <string>
 #include <thread>
-#include <vector>
 #include <random>
+#include <vector>
 
-// Wichtige Konstanten
-constexpr UINT WM_SIMULATION_UPDATE = WM_APP + 1;
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <filesystem>
+
+
+// Programmspezifische Includes, Konstanten, Makros etc
+constexpr UINT WM_SIMULATION_UPDATE = WM_APP + 1; // nur für die .exe wichtig
+#include "../PlasmaphysikV00/Configs/Konstanten_config.inc"

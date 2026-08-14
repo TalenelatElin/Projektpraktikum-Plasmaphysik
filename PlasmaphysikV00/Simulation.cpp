@@ -1,9 +1,9 @@
-#include "framework.h"
-#include "Simulation.h"
-#include "StateToWindow.h"
-#include <fstream>
-#include <filesystem>
-#include "Konstanten_config.inc"
+
+#include "../PlasmaphysikV00/framework.h"
+#include "../PlasmaphysikV00/Simulation.h"
+
+#include "../PlasmaphysikV00/StateToWindow.h"
+
 
 
 
@@ -28,8 +28,11 @@ int main()
 //          Der Systemzustand ist ein eigenes Objekt, diese Klasse produziert nur neue Zustände
 //
 
-
-void Simulation::Start() // TODO
+//
+// The Simulation algorithm (works on depth long vector<Sim_Sys_State> entwicklung)
+// Nötiger Arbeitsspeicher ~= 2*depth*speicher(Sim_Sys_State.o), wird halbiert wenn anfangszustände auf Festplatte
+// 
+void Simulation::Start() // TODO: Random generator
 {
     // Random generator:
     std::random_device rd;
@@ -38,98 +41,101 @@ void Simulation::Start() // TODO
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
 
-    unsigned int j = static_cast<unsigned int>(depth);
-    while (stop == false && j < sim_len)
+    std::size_t counter = depth-1;
+    unsigned short entw_pos = 0;
+    while (stop == false && counter < sim_len)
     {
-        context c(depth, h);
+        // Treat entwicklung like a Queue with length depth (fixed)
+        evolve_system(getContext(entw_pos, gen, dist));
 
-        for (int i = 0; i < depth; i++) {
-            c.prevs[i] = &entwicklung[j - depth + i];
+        // Track stuff
+        std::size_t r = max(1, sim_len / nr_saves);
+        if (counter % r == 0) {
+            make_save(entwicklung[entw_pos]);
         }
-        entwicklung[j] = next(c, gen, dist);
 
-
-        unsigned int r = max(1, sim_len / nr_updates);
-        if (j % r == 0) {
-            update(j);
+        // Update (only for .exe)
+        if (nr_updates != 0) {
+            unsigned short r = max(1, sim_len / nr_updates);
+            if (counter % r == 0) {
+                update();
+            }
         }
-        j += 1;
+
+        counter++;
+        entw_pos++;
+        entw_pos = entw_pos % depth;
     }
     stop = false;
 }
 
 
-Sim_Sys_State Simulation::next(context& c, std::mt19937& gen, std::uniform_real_distribution<double>& dist) // TODO
+void Simulation::evolve_system(const context& c) // TODO
 {
-    std::vector<double> p; //Ist das überhaupt nötig?
-    p.resize(3 * N);
-    for (int l = 0; l < 3*N; l++) {
-        p[l] = 2*dist(gen) - 1;
-    }
-
-    Sim_Sys_State z_new;
-
     for (int l = 0; l < N; l++) {
-        z_new.particles[l].id = l;
-
-        c.px = p[3 * l];
-        c.py = p[3 * l + 1];
-        c.pz = p[3 * l + 2];
-
-        
-
+        // Makros
         #define SET(type, name, value)
         #define VEC(type, name, size)
         #define FUNCTION(returnType, name, args, body)
         #define EVOLUTION(returnType, name, args, body) \
-            z_new.particles[l].name = c.prevs.back()->particles[l].evolve_##name(c);
+            returnType evolved_##name = c.prevs[0]->particles[l].evolve_##name(c);
 
-        #include "Teilchen_config.inc"
+        #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
+
+        #undef EVOLUTION
+        #define EVOLUTION(returnType, name, args, body) c.prevs[0].name = evolved_##name
+
+        #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
 
         #undef EVOLUTION
         #undef FUNCTION
         #undef VEC
         #undef SET
     }
-    //z_new.setDistanzen();
-    z_new.MSD = c.prevs.back()->getMeanSquare();
-
-    return z_new;
 }
 
-
-
-
-void Simulation::translate_AnfangsConfig(std::string dateiname) // TODO: Wie behandle ich vektoren die zu einem teilchen gehören?
+// TODO: dist(gen) durch die gewünschte Wahrscheinlichkeitsverteilung ersetzen
+context Simulation::getContext(std::size_t current_index, std::mt19937& gen, std::uniform_real_distribution<double>& dist)
 {
-    startzust.resize(depth);
-    startzustaende.resize(depth);
-    if (dateiname != "Anfangszustaende.inc") { // Ansonsten Codeänderung nötig.
-        return;
+    // Generate context
+    context c(h, depth, N, num_Para);
+
+    // Set Previous
+    for (int i = 0; i < depth; i++) {
+        c.prevs[i] = &entwicklung[(current_index + i) % depth];
     }
-    if (depth > 2) {
-        for (unsigned int i = 0; i < depth; i++) {
-            // Makros zum Übersetzen der Anfangszustände
-            #define SET(name, ...) \
-                startzust[i].name = std::vector<int>{__VA_ARGS__}[i];
 
-            #include "Anfangszustaende.inc"
-            #undef SET
-
-            startzustaende[i] = &startzust[i];
+    // Set randomness
+    for (std::size_t l = 0; l < 3 * N; l++) {
+        for (std::size_t m = 0; m < 3 * N; m++) {
+            c.probs[l][m] = dist(gen);
         }
     }
-    else {  // Dann ist die Initialisierung des einen Startzustandes schon in System_config passiert.
-        entwicklung.resize(sim_len);
-        startzust[0] = entwicklung[0];
-        startzustaende[0] = &startzust[0];
-        return;
+
+    // Return
+    return c;
+}
+
+
+
+
+void Simulation::translate_AnfangsConfig() // TODO: Wie behandle ich Vektoren die zu einem Teilchen gehören?
+{
+    entwicklung.resize(depth);
+    startzustaende.resize(depth);
+    for (unsigned int i = 0; i < depth; i++) {
+        // Makros
+        #define SET(name, ...) \
+            startzustaende[i].name = std::vector<int>{__VA_ARGS__}[i];
+
+        #include "../PlasmaphysikV00/Configs/Anfangszustaende.inc"
+        #undef SET
     }
 }
 
-void Simulation::translate_SimulationConfig(std::string pdateiname)  // TODO: füllen aller nötigen Config-Parameter
+void Simulation::translate_SimulationConfig()  // LTODO: füllen aller nötigen Config-Parameter
 {
-    std::ifstream file(pdateiname);
+    std::ifstream file("../PlasmaphysikV00/Configs/Simulation_config.inc");
 
     std::string line;
 
@@ -156,11 +162,11 @@ void Simulation::translate_SimulationConfig(std::string pdateiname)  // TODO: f�
             }
             else if (key == "dateiname")
             {
-                dateiname = value;
+                sim_data_name = value;
             }
             else if (key == "h")
             {
-                h = std::stoull(value);
+                h = std::stof(value);
             }
             // Und so weiter und so fort
         }
@@ -168,27 +174,32 @@ void Simulation::translate_SimulationConfig(std::string pdateiname)  // TODO: f�
 }
 
 
+
+
 void Simulation::update()
 {
-    paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
-
     if (ghWnd != nullptr){
         PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
+        if (ghdc != nullptr) {
+            paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
+        }
+        else {
+            giveWindow(ghWnd);
+            paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
+        }
     }
 }
 void Simulation::update(int j)
 {
-    setCurrent(j);
-
+    shiftCurrent(j);
     update();
 }
-
 
 
 void Simulation::download()
 {
     namespace fs = std::filesystem;
-    const fs::path dateipfad = fs::path("..") / "Diffusionstest" / "Data" / dateiname;
+    const fs::path dateipfad = fs::path("..") / "Diffusionstest" / "Data" / sim_data_name;
     std::ofstream file(dateipfad);
 
     if (!file)
@@ -205,27 +216,69 @@ void Simulation::download()
 }
 
 
+void Simulation::make_save(Sim_Sys_State& current) // TODO
+{
+    // Makros
+    #define SET(type, name, value)
+    #define VEC(type, name, size)
+    #define MAT(type, name, size1, size2)
+    #define FUNCTION(returnType, name, args, body) 
+    #define TRACK(returnType, name, args, body)
+
+    #include "../PlasmaphysikV00/Configs/System_config.inc"
+
+    #undef TRACK
+    #undef FUNCTION
+    #undef MAT
+    #undef VEC
+    #undef SET
+
+
+    //current.setDistanzen();
+    //current.MSD = c.prevs.back()->getMeanSquare();
+}
+void make_save(Sim_Sys_State& current, std::string dateipfad)
+{
+
+
+}
+
+
+
+
 Simulation::Simulation()
 {
-    current = 0;
-    current_id = 0;
-    depth = 1;
-    sim_len = 10;
     ghWnd = nullptr;
     ghdc = nullptr;
-    nr_updates = 100;
     h = 0.1;
-    dateiname = "Simul.txt";
-    Initialize();
+    stop = false;
+    sim_len = 10;
+    depth = 1;
+    sim_data_name = "Simul_default_name.txt";
+    current_id = 0;
+    nr_updates = 10;
+    nr_saves = 10;
+    num_Para = 3;
 }
 void Simulation::Initialize()
 {
-    translate_SimulationConfig("Simulation_config.txt");
-    translate_AnfangsConfig("Anfangszustaende.inc");
+    num_Para = 0
+    // Makros
+    #define SET(type, name, value) +1 // Zählen der Parameter
+    #define VEC(type, name, size)
+    #define FUNCTION(returnType, name, args, body)
+    #define EVOLUTION(returnType, name, args, body)
 
-    Reset();
+    #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
+            ;
 
-    setCurrent();
+    #undef SET
+    #undef Vec
+    #undef FUNCTION
+    #undef EVOLUTION
+
+    translate_SimulationConfig();
+    translate_AnfangsConfig();
 }
 void Simulation::Stop()
 {
@@ -244,25 +297,20 @@ void Simulation::giveWindow(HWND phWnd, HDC phdc)
 }
 Sim_Sys_State* Simulation::getCurrent()
 {
-    return current;
+    return &entwicklung[current_id];
 }
-void Simulation::setCurrent()
+void Simulation::shiftCurrent(int j)
 {
-    current = &entwicklung[current_id];
-}
-void Simulation::setCurrent(int j)
-{
-    current_id = j;
-    current = &entwicklung[j];
+    int limit = current_id + j;
+    if (limit >= 0 && limit < depth){
+        current_id = limit;
+    }
 }
 void Simulation::Reset()
 {
-    entwicklung.resize(sim_len);
-    for (int i = 0; i < depth; i++) {
-        entwicklung[i] = startzust[i];
-    }
-    current = startzustaende.back();
-    unsigned int current_id = static_cast<unsigned int>(depth - 1);
+    entwicklung.resize(depth);
+    current_id = 0;
+    stop = false;
 
     if (ghWnd != nullptr && ghdc != nullptr )
     {

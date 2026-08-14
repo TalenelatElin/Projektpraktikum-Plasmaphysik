@@ -1,10 +1,11 @@
 // main.cpp : Definiert den Einstiegspunkt für die Anwendung.
 //
 
-#include "framework.h"
-#include "main.h"
-#include "StateToWindow.h"
-#include "Simulation.h"
+#include "../PlasmaphysikV00/framework.h"
+#include "../PlasmaphysikV00/main.h"
+
+#include "../PlasmaphysikV00/StateToWindow.h"
+#include "../PlasmaphysikV00/Simulation.h"
 
 
 #define MAX_LOADSTRING 100

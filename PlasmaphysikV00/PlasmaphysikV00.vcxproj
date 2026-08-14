@@ -169,16 +169,16 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Anfangszustaende.inc" />
     <Text Include="Brown_exact.txt" />
+    <Text Include="Configs\Simulation_config.txt" />
     <Text Include="Coulomb_approx.txt" />
     <Text Include="Coulomb_exact.txt" />
-    <Text Include="Konstanten_config.inc" />
-    <Text Include="Simulation_config.txt" />
-    <Text Include="System_config.inc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Teilchen_config.inc" />
+    <None Include="Configs\Anfangszustaende.inc" />
+    <None Include="Configs\Konstanten_config.inc" />
+    <None Include="Configs\System_config.inc" />
+    <None Include="Configs\Teilchen_config.inc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

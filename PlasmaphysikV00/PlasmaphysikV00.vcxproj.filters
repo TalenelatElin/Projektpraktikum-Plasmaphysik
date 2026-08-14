@@ -13,11 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Ressourcendateien\Configs">
-      <UniqueIdentifier>{eaed5850-c0ac-40d1-8228-76b27ce9dc72}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Ressourcendateien\Teilchenconfigs">
       <UniqueIdentifier>{9337804b-018a-46db-8656-947db9ce9d42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ressourcendateien\Configs">
+      <UniqueIdentifier>{5a2a88c6-69e7-41c3-bcc0-ab6f74462688}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -65,18 +65,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Konstanten_config.inc">
-      <Filter>Ressourcendateien\Configs</Filter>
-    </Text>
-    <Text Include="Anfangszustaende.inc">
-      <Filter>Ressourcendateien\Configs</Filter>
-    </Text>
-    <Text Include="Simulation_config.txt">
-      <Filter>Ressourcendateien\Configs</Filter>
-    </Text>
-    <Text Include="System_config.inc">
-      <Filter>Ressourcendateien\Configs</Filter>
-    </Text>
     <Text Include="Coulomb_exact.txt">
       <Filter>Ressourcendateien\Teilchenconfigs</Filter>
     </Text>
@@ -86,9 +74,21 @@
     <Text Include="Coulomb_approx.txt">
       <Filter>Ressourcendateien\Teilchenconfigs</Filter>
     </Text>
+    <Text Include="Configs\Simulation_config.txt">
+      <Filter>Ressourcendateien\Configs</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Teilchen_config.inc">
+    <None Include="Configs\Teilchen_config.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
+    </None>
+    <None Include="Configs\System_config.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
+    </None>
+    <None Include="Configs\Konstanten_config.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
+    </None>
+    <None Include="Configs\Anfangszustaende.inc">
       <Filter>Ressourcendateien\Configs</Filter>
     </None>
   </ItemGroup>

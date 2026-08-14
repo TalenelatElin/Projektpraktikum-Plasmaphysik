@@ -41,7 +41,7 @@ def plotDiffusion(lab, dateiname):
 
 
 def changeConfigLine(dateiname, li, text):
-    pfad = Path("..") / "PlasmaphysikV00" / dateiname
+    pfad = Path("..") / "PlasmaphysikV00" / "Configs" / dateiname
     with open(pfad, "r", encoding="utf-8") as datei:
         zeilen = datei.readlines()
 
