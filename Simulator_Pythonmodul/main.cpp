@@ -13,13 +13,10 @@ void runSimulation()
     py::print("C++: Objekt erstellt");
 
     simulation.Initialize();
-    py::print("C++: Initialisierung abgeschlossen");
+    py::print("C++: Initialisierung abgeschlossen, Simulation beginnt");
     
     simulation.Start();
-    py::print("C++: Simulation Durchgeführt");
-    
-    simulation.download();
-    py::print("C++: Download fertiggestellt");
+    py::print("C++: Simulation abgeschlossen.");
 }
 
 

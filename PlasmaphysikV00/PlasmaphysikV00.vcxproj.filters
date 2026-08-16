@@ -91,5 +91,8 @@
     <None Include="Configs\Anfangszustaende.inc">
       <Filter>Ressourcendateien\Configs</Filter>
     </None>
+    <None Include="Randbedingungen.inc">
+      <Filter>Ressourcendateien\Configs</Filter>
+    </None>
   </ItemGroup>
 </Project>

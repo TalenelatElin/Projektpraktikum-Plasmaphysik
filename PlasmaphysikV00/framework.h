@@ -2,24 +2,26 @@
 #pragma once
 
 
-#include "../PlasmaphysikV00/targetver.h"
+#include "../PlasmaphysikV00/targetver.h" // Windowsspezifisch
 #define WIN32_LEAN_AND_MEAN             // Selten verwendete Komponenten aus Windows-Headern ausschließen
 // Windows-Headerdateien
-#include <windows.h>
+#include <windows.h> // Windowsspezifisch
 // C RunTime-Headerdateien
-#include <stdlib.h>
-#include <malloc.h>1
-#include <memory.h>
-#include <tchar.h>
+#include <cstdlib>
+//#include <malloc.h>
+#include <cstring>
+#include <tchar.h> // Windowsspezifisch
 
 // Nützliche Bibliotheken
 #include <iostream>
 #include <thread>
+#include <mutex>
+
 #include <random>
 #include <vector>
+#include <queue>
 
 #include <string>
-#include <sstream>
 #include <fstream>
 #include <filesystem>
 

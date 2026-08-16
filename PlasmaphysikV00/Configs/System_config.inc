@@ -6,15 +6,23 @@
 // Variablen: Falls nur ein Startzustand nötig ist, dann wird dieser von hier extrahiert. Dann ist keine Implementation in Anfangsustände nötig.
 //            Die Reihenfolge ist wichtig
 //
-// SET(int, MSD, 0)
 //
-SET(float, MSD, 0)
+// SET(int, MSD, 0)
+// TRACKSET(int, test, 4)
+// VEC(std::vector<double>, testvec, 5)
 MAT(float, distanzen, N, N)
+
+//TRACKPARTICLE(std::vector<Teilchen>, particles, N) // nur auskommentieren, wenn die teilchen getrackt werden sollen.
+
+
+
 
 //
 // Funktionen: Definieren Größen die mehrerere Teilchen zum errechnen brauchen.
 // FUNCTION(return type, name, args, expression)
-//
+// TRACKFUNC(return type, test, (), expression) // Dürfen keine Parameter haben
+// VERTFUNC(x, args, expression) // x entspricht dem Namen der Variable die entsprechend dieser Verteilungsfunktion verteilt sein soll
+
 FUNCTION(float, squadd, (float a, float b, float c), {
     return std::sqrt(a*a+b*b+c*c);
 })
@@ -31,7 +39,7 @@ FUNCTION(void, setDistanzen, (), {
     }
 })  
 
-FUNCTION(float, getMeanSquare, (), {
+TRACKFUNC(float, getMeanSquare, (), {
     float mean_square = 0;
     for (int i = 0; i < N; i++){
         float r = particles[i].getDistance(); 
@@ -40,4 +48,3 @@ FUNCTION(float, getMeanSquare, (), {
     return mean_square/N;
 })
 
-TRACK(getMeanSquare)

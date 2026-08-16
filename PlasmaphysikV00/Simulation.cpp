@@ -14,7 +14,6 @@ int main()
     Simulation s;
     s.Initialize();
     s.Start();
-    s.download();
     return 0;
 }
 
@@ -39,51 +38,66 @@ void Simulation::Start() // TODO: Random generator
     std::mt19937 gen(rd());
     //std::uniform_int_distribution<int> dist(0, 1);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
+        
 
-
-    std::size_t counter = depth-1;
+    std::size_t counter = 0;
     unsigned short entw_pos = 0;
-    while (stop == false && counter < sim_len)
+
+    std::size_t mr = 1;
+    if (nr_saves != 0) {
+        mr = max(1, sim_len / nr_saves);
+    }
+
+    // Zeitmessung
+    using Clock = std::chrono::steady_clock;
+
+    // Schreiben und Simulieren in verschiedenen Threads
+    SimulationLogger sLog(sim_data_name, sim_len,static_cast<int>(1000/N) ,ghWnd, ghdc);
+
+    std::thread loggerThread(&SimulationLogger::loggerThreadLoop, &sLog);
+    const auto totalStart = Clock::now();
+
+    // Simulationsalgorithmus
+    while (!stop && counter < sim_len)
     {
         // Treat entwicklung like a Queue with length depth (fixed)
         evolve_system(getContext(entw_pos, gen, dist));
 
         // Track stuff
-        std::size_t r = max(1, sim_len / nr_saves);
-        if (counter % r == 0) {
-            make_save(entwicklung[entw_pos]);
+        if (counter % mr == 0) {
+            sLog.pushState(entwicklung[entw_pos]);
         }
 
-        // Update (only for .exe)
-        if (nr_updates != 0) {
-            unsigned short r = max(1, sim_len / nr_updates);
-            if (counter % r == 0) {
-                update();
-            }
-        }
-
+        // Increment
         counter++;
         entw_pos++;
         entw_pos = entw_pos % depth;
     }
-    stop = false;
+
+    sLog.finish();
+    loggerThread.join();
+
+    stop = false; 
+
+    sLog.total_sim_time = Clock::now() - totalStart;
+    //std::chrono::duration<double, std::milli>( ... ).count()
 }
 
 
-void Simulation::evolve_system(const context& c) // TODO
+void Simulation::evolve_system(const context& c) // TODO: Randbedingungen berücksichtigen
 {
     for (int l = 0; l < N; l++) {
         // Makros
         #define SET(type, name, value)
         #define VEC(type, name, size)
         #define FUNCTION(returnType, name, args, body)
-        #define EVOLUTION(returnType, name, args, body) \
-            returnType evolved_##name = c.prevs[0]->particles[l].evolve_##name(c);
+        #define EVOLUTION(name, args, body) \
+            decltype(Teilchen::name) evolved_##name = c.prevs[0]->particles[l].evolve_##name(c);
 
         #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
 
         #undef EVOLUTION
-        #define EVOLUTION(returnType, name, args, body) c.prevs[0].name = evolved_##name
+        #define EVOLUTION(name, args, body) c.prevs[0]->particles[l].name = evolved_##name;
 
         #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
 
@@ -94,8 +108,8 @@ void Simulation::evolve_system(const context& c) // TODO
     }
 }
 
-// TODO: dist(gen) durch die gewünschte Wahrscheinlichkeitsverteilung ersetzen
-context Simulation::getContext(std::size_t current_index, std::mt19937& gen, std::uniform_real_distribution<double>& dist)
+// TODO: dist(gen) durch die gewünschte Wahrscheinlichkeitsverteilung ersetzen+Randbedingungen?
+context Simulation::getContext(unsigned short current_index, std::mt19937& gen, std::uniform_real_distribution<double>& dist)
 {
     // Generate context
     context c(h, depth, N, num_Para);
@@ -106,9 +120,14 @@ context Simulation::getContext(std::size_t current_index, std::mt19937& gen, std
     }
 
     // Set randomness
-    for (std::size_t l = 0; l < 3 * N; l++) {
-        for (std::size_t m = 0; m < 3 * N; m++) {
-            c.probs[l][m] = dist(gen);
+    for (std::size_t l = 0; l < N; l++) {
+        for (std::size_t m = 0; m < num_Para; m++) {
+            if (dist(gen) > 0.5) {
+                c.probs[l][m] = 1;
+            }
+            else {
+                c.probs[l][m] = -1;
+            }
         }
     }
 
@@ -119,24 +138,180 @@ context Simulation::getContext(std::size_t current_index, std::mt19937& gen, std
 
 
 
-void Simulation::translate_AnfangsConfig() // TODO: Wie behandle ich Vektoren die zu einem Teilchen gehören?
+
+
+void SimulationLogger::pushState(Sim_Sys_State& current)
 {
-    entwicklung.resize(depth);
-    startzustaende.resize(depth);
-    for (unsigned int i = 0; i < depth; i++) {
-        // Makros
-        #define SET(name, ...) \
-            startzustaende[i].name = std::vector<int>{__VA_ARGS__}[i];
+    std::unique_lock<std::mutex> lock(queueMutex);
+
+    // Warten, falls der Logger nicht hinterherkommt
+    const auto waitStart = Clock::now();
+    spaceAvailable.wait(lock, [this] { return logQueue.size() < maxQueueSize; });
+    sim_wait_time += Clock::now() - waitStart;
+
+    logQueue.emplace(current);
+    lock.unlock();
+    dataAvailable.notify_one();
+}
+void SimulationLogger::loggerThreadLoop()
+{
+    std::filesystem::path pfad = std::filesystem::path{ ".." } / "Diffusionstest" / "Data" / sim_data_name;
+    std::ofstream file(pfad);
+
+    if (!file) {
+        std::string debugText =
+            "Aktuelles Arbeitsverzeichnis konnte nicht geöffnet werden: " +
+            std::filesystem::current_path().string() +
+            "\n";
+
+        std::cerr << "Logdatei konnte nicht geöffnet werden\n";
+        return;
+    }
+
+    float counter = 0;
+    while (true) {
+        LogEntry entry;
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+
+            // Warten, bis Daten vorhanden oder die Simulation fertig ist
+            const auto waitStart = Clock::now();
+            dataAvailable.wait(lock, [this] {  return !logQueue.empty() || simulationFinished; });
+            log_wait_time += Clock::now() - waitStart;
+
+            // Erst beenden, wenn alle Einträge geschrieben wurden
+            if (logQueue.empty() && simulationFinished) {
+                break;
+            }
+
+            counter++;
+            entry = logQueue.front();
+            logQueue.pop();
+        }
+
+        // Simulation darüber informieren, dass Platz frei ist
+        spaceAvailable.notify_one();
+
+        // Schreiben außerhalb des gesperrten Bereichs
+        file << write(entry, counter/sim_len);
+    }
+
+    file.flush();
+}
+void SimulationLogger::finish()
+{
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        simulationFinished = true;
+    }
+
+    dataAvailable.notify_one();
+}
+std::string SimulationLogger::write(LogEntry& entry, float progess) // TODO
+ {
+    std::ostringstream ss;
+
+    #define SET(type, name, value)
+    #define VEC(type, name, size)
+    #define MAT(type, name, size1, size2)
+    #define FUNCTION(returnType, name, args, body)
+
+
+    #define TRACKFUNC(returnType, name, args, body) ss << entry.var_##name << " ";
+    #define TRACKSET(type, name, value) ss << name << " ";
+    #define TRACKPARTICLE(type, name, size) ss << toString(name) << " ";
+
+    #include "../PlasmaphysikV00/Configs/System_config.inc"
+
+    #undef TRACKPARTICLE
+    #undef TRACKFUNC
+    #undef TRACKSET
+
+
+    #undef FUNCTION
+    #undef MAT
+    #undef VEC
+    #undef SET
+
+    ss << "\n";
+    update(progess);
+    return ss.str();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void Simulation::translate_AnfangsConfig() // TODO: Wie behandle ich einzelne Teilchenverteilungen, Vektoren und co
+{
+    // Random generator:
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    //std::uniform_int_distribution<int> dist(0, 1);
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+    // Set randomness
+    std::vector<std::vector<double>> probs(N, std::vector<double>(num_Para));
+    for (std::size_t l = 0; l < N; l++) {
+        for (std::size_t m = 0; m < num_Para; m++) {
+            probs[l][m] = dist(gen);
+        }
+    }
+
+
+#define MAT(type, name, size1, size2)
+#define VEC(type, name, size)
+
+    entwicklung.reserve(depth);
+    for (unsigned short i = 0; i < depth; i++) {
+        entwicklung.emplace_back(N, i);
+
+        #define SET(type, name, ...) \
+            entwicklung[i].name = std::vector<type>{__VA_ARGS__}[i];
+        #define PARTICLES(id, ...) \
+            entwicklung[id].particles = std::vector<Teilchen>{__VA_ARGS__};
+  //      #define VERTCUNC(name, ) \
+
+     //       entwicklung[id].particles.name = std::vector<Teilchen>{__VA_ARGS__};
 
         #include "../PlasmaphysikV00/Configs/Anfangszustaende.inc"
-        #undef SET
     }
+
+#undef SET
+#undef VEC
+#undef MAT
+#undef PARTICLES
 }
 
 void Simulation::translate_SimulationConfig()  // LTODO: füllen aller nötigen Config-Parameter
 {
-    std::ifstream file("../PlasmaphysikV00/Configs/Simulation_config.inc");
-
+    std::filesystem::path pfad = std::filesystem::path{ ".." } / "PlasmaphysikV00" / "Configs" / "Simulation_config.txt";
+    std::ifstream file(pfad);
+    
     std::string line;
 
     while (std::getline(file, line))
@@ -156,9 +331,9 @@ void Simulation::translate_SimulationConfig()  // LTODO: füllen aller nötigen 
             {
                 depth = std::stoull(value);
             }  
-            else if (key == "nr_updates")
+            else if (key == "nr_saves")
             {
-                nr_updates = std::stoull(value);
+                nr_saves = std::stoull(value);
             }
             else if (key == "dateiname")
             {
@@ -176,74 +351,13 @@ void Simulation::translate_SimulationConfig()  // LTODO: füllen aller nötigen 
 
 
 
-void Simulation::update()
+void SimulationLogger::update(float progress)
 {
     if (ghWnd != nullptr){
         PostMessage(ghWnd,WM_SIMULATION_UPDATE,0,0);
-        if (ghdc != nullptr) {
-            paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
-        }
-        else {
-            giveWindow(ghWnd);
-            paintProgress(ghdc, static_cast<float>(current_id) / sim_len);
-        }
+            paintProgress(ghdc, progress);        
     }
 }
-void Simulation::update(int j)
-{
-    shiftCurrent(j);
-    update();
-}
-
-
-void Simulation::download()
-{
-    namespace fs = std::filesystem;
-    const fs::path dateipfad = fs::path("..") / "Diffusionstest" / "Data" / sim_data_name;
-    std::ofstream file(dateipfad);
-
-    if (!file)
-        return;
-
-    for (int j = 0; j < sim_len && !stop; ++j)
-    {
-        file << entwicklung[j].stateToString() << '\n';
-
-        paintProgress(ghdc, static_cast<float>(j + 1) / sim_len);
-    }
-
-    stop = false;
-}
-
-
-void Simulation::make_save(Sim_Sys_State& current) // TODO
-{
-    // Makros
-    #define SET(type, name, value)
-    #define VEC(type, name, size)
-    #define MAT(type, name, size1, size2)
-    #define FUNCTION(returnType, name, args, body) 
-    #define TRACK(returnType, name, args, body)
-
-    #include "../PlasmaphysikV00/Configs/System_config.inc"
-
-    #undef TRACK
-    #undef FUNCTION
-    #undef MAT
-    #undef VEC
-    #undef SET
-
-
-    //current.setDistanzen();
-    //current.MSD = c.prevs.back()->getMeanSquare();
-}
-void make_save(Sim_Sys_State& current, std::string dateipfad)
-{
-
-
-}
-
-
 
 
 Simulation::Simulation()
@@ -267,7 +381,7 @@ void Simulation::Initialize()
     #define SET(type, name, value) +1 // Zählen der Parameter
     #define VEC(type, name, size)
     #define FUNCTION(returnType, name, args, body)
-    #define EVOLUTION(returnType, name, args, body)
+    #define EVOLUTION(name, args, body)
 
     #include "../PlasmaphysikV00/Configs/Teilchen_config.inc"
             ;
@@ -284,16 +398,17 @@ void Simulation::Stop()
 {
     stop = true;
 }
-void Simulation::giveWindow(HWND phWnd)
-{
-    ghWnd = phWnd;
-    HDC hdc = GetDC(ghWnd);
-    ghdc = hdc;
-}
 void Simulation::giveWindow(HWND phWnd, HDC phdc)
 {
     ghWnd = phWnd;
-    ghdc = phdc;
+    if (phdc == nullptr) {
+        HDC hdc = GetDC(ghWnd);
+        ghdc = hdc;
+    }
+    else {
+        ghdc = phdc;
+    }
+
 }
 Sim_Sys_State* Simulation::getCurrent()
 {

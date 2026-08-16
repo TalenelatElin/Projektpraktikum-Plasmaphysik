@@ -3,16 +3,16 @@
 
 
 // Name der Datei die gedownloaded wird (Keine Anführungszeichen!)
-dateiname=test_test.txt
+dateiname=Diskrete_Braunsche_Bewegung9.txt
 
 // Anzahl der Rekursionsschritte
-sim_len=10
+sim_len=10000
 
 // Anzahl der nötigen Anfangszustände bzw der Anzahl der vorherigen Zustände, die nötig sind um den nächsten auszurechnen (Rekursion!)
-depth=2
+depth=1
 
 // Differentialgleichungsschritt
 h=0.1
 
 // Anzahl der (screen)Updates die während der Simulation durchgeführt werden
-nr_updates=100000
+nr_saves=100000

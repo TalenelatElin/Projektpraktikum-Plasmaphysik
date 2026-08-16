@@ -179,6 +179,7 @@
     <None Include="Configs\Konstanten_config.inc" />
     <None Include="Configs\System_config.inc" />
     <None Include="Configs\Teilchen_config.inc" />
+    <None Include="Randbedingungen.inc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

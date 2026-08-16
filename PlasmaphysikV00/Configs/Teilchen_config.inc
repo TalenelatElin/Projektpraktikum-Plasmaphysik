@@ -25,19 +25,18 @@ FUNCTION(float, getDistance, (), {
 
 //
 // Funktionen: Evolutionen der einzelnen Größen. Dies entspricht also den Bewegungsgleichungen.
-//             Es ist wichtig, dass hier die Namen (und selbe Rückgabetypen) der Teilchenzustandsparameter stehen
+//             Es ist wichtig, dass hier die Namen der Teilchenzustandsparameter stehen
 //
-//        Bsp: oben steht:       SET( float, x,  0)
-//              dann muss: EVOLUTION( float, x,  const context& c, expression)
-//                                      ^     ^
+//        Bsp: oben steht: SET( float, x,  0)
+//              dann muss:  EVOLUTION( x,  (const context& c), expression)
+//                                     ^
 //      
-EVOLUTION(float, x, (const context& c), {
-    return x + c.px*dx;
+EVOLUTION(x, (const context& c), {
+    return x + c.probs[id][0]*dx;
 })
-EVOLUTION(float, y, (const context& c), {
-    return y + c.py*dy;
-
+EVOLUTION(y, (const context& c), {
+    return y + c.probs[id][1]*dy;
 })
-EVOLUTION(float, z, (const context& c), {
-    return z + c.pz*dz;    
+EVOLUTION(z, (const context& c), {
+    return z + c.probs[id][2]*dz;    
 })

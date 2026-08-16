@@ -174,8 +174,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // Default Menüpunkte:
             case ID_DATEI_DOWNLOADSIMULATION:
                 simulationThread = std::jthread([]() {
-                    simulation.download();
-                });
+
+                    });
 
                 break;
             case IDM_EXIT:
